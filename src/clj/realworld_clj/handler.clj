@@ -17,9 +17,7 @@
   :start
   (ring/ring-handler
     (ring/router
-      [["/" {:get
-             {:handler (constantly {:status 301 :headers {"Location" "/api/api-docs/index.html"}}) }}]
-       (service-routes)])
+      [(service-routes)])
     (ring/routes
       (ring/create-resource-handler
         {:path "/"})

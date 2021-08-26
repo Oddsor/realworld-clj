@@ -13,8 +13,8 @@
                  [expound "0.8.9"]
                  [funcool/struct "1.4.0"]
                  [json-html "0.4.7"]
-                 [juxt/crux-core "21.04-1.16.0-beta"]
-                 [juxt/crux-rocksdb "21.04-1.16.0-beta"]
+                 [pro.juxt.crux/crux-core "1.18.1"]
+                 [pro.juxt.crux/crux-rocksdb "1.18.1"]
                  [luminus-jetty "0.2.0"]
                  [luminus-transit "0.1.2"]
                  [luminus/ring-ttl-session "0.3.3"]
@@ -43,7 +43,10 @@
   :target-path "target/%s/"
   :main ^:skip-aot realworld-clj.core
 
-  :plugins [] 
+  :plugins [[lein-with-env-vars "0.2.0"]] 
+  :env-vars {:CRUX_ENABLE_BYTEUTILS_SHA1 true
+             :CRUX_DISABLE_LIBGCRYPT true}
+  :hooks [leiningen.with-env-vars/auto-inject]
 
   :profiles
   {:uberjar {:omit-source true
@@ -55,7 +58,7 @@
    :dev           [:project/dev :profiles/dev]
    :test          [:project/dev :project/test :profiles/test]
 
-   :project/dev  {:jvm-opts ["-Dconf=dev-config.edn" ]
+   :project/dev  {:jvm-opts ["-Dconf=dev-config.edn"]
                   :dependencies [[pjstadig/humane-test-output "0.11.0"]
                                  [prone "2021-04-23"]
                                  [ring/ring-devel "1.9.4"]
@@ -70,7 +73,7 @@
                                  :timeout 120000}
                   :injections [(require 'pjstadig.humane-test-output)
                                (pjstadig.humane-test-output/activate!)]}
-   :project/test {:jvm-opts ["-Dconf=test-config.edn" ]
+   :project/test {:jvm-opts ["-Dconf=test-config.edn"]
                   :resource-paths ["env/test/resources"] }
    :profiles/dev {}
    :profiles/test {}})
