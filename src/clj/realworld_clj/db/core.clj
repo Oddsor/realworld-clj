@@ -25,6 +25,13 @@
 
 (comment (init-create-if-not-exists-fn))
 
+(defn namespace-keys [ns-to-add entity]
+  (into {} (map (fn [[k v]]
+                  (if (and (keyword? k)
+                           (nil? (namespace k)))
+                    [(keyword ns-to-add (name k)) v]
+                    [k v])))
+        entity))
 
 (defn- remove-type-and-crux-id
   [user-doc]
@@ -33,18 +40,27 @@
 (defn find-user-by-attribute
   [node attr value]
   (-> (crux/q
-        (crux/db node)
-        (doto {:find  '[(pull user [*])]
-               :where [['user attr 'value]
-                       ['user :realworld-clj/type :user]]
-               :in    '[attr value]} prn)
-        attr value)
+       (crux/db node)
+       {:find  '[(pull user [*])]
+        :where [['user attr 'value]
+                ['user :realworld-clj/type :user]]
+        :in    '[attr value]}
+       attr value)
       ffirst
       remove-type-and-crux-id))
 
 (defn find-user-by-username
   [node username]
   (find-user-by-attribute node :user/username username))
+
+(defn find-user-by-email-and-password 
+  [node {:keys [email password]}]
+  (let [user (find-user-by-attribute node :user/email email)]
+    (when (and user (h/check password (:user/password user)))
+      user)))
+
+(comment
+  (find-user-by-email-and-password node {:email "oddsor@pm.me" :password "12345678"}))
 
 (defn create-user!
   "e.g.
@@ -65,3 +81,31 @@
      node
      (crux/submit-tx node [[:crux.tx/fn :fn-create-if-not-exists user-with-id]]))
     (crux/entity (crux/db node) new-id)))
+
+(defn create-new-article [node article]
+  (let [new-id (UUID/randomUUID)
+        new-article (namespace-keys "article"
+                                    (assoc article
+                                           :crux.db/id new-id
+                                           :realworld-clj/type :article))]
+    (crux/await-tx
+     node
+     (crux/submit-tx node [[:crux.tx/put new-article]]))
+    (-> (crux/entity (crux/db node) new-id)
+        (remove-type-and-crux-id))))
+
+(defn find-article-by-title [node title]
+  (-> (crux/q (crux/db node)
+              {:find '[(pull article [*])]
+               :where [['article :realworld-clj/type :article]
+                       ['article :article/title title]]})
+      (map (comp remove-type-and-crux-id first))))
+
+(defn find-articles [node]
+  (->> (crux/q (crux/db node)
+               {:find '[(pull article [*])]
+                :where [['article :realworld-clj/type :article]]})
+       (map (comp remove-type-and-crux-id first))))
+
+(comment
+  (count (find-articles node)))

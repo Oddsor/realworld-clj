@@ -16,7 +16,8 @@
   "Starts application.
   You'll usually want to run this on startup."
   []
-  (mount/start-without #'realworld-clj.core/repl-server))
+  (mount/start-without #'realworld-clj.core/repl-server)
+  (realworld-clj.db.core/init-create-if-not-exists-fn))
 
 (defn stop
   "Stops application."
